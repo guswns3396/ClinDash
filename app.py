@@ -31,9 +31,10 @@ app.layout = html.Div([
         # only accept csvs
         accept='.csv'
     ),
+    html.P('Files'),
     html.Div(
         id='data-dropdown-div',
-        children=dcc.Dropdown(id='data-dropdown')
+        children=dcc.Dropdown(list(DATA.keys()), id='data-dropdown')
     ),
     html.Div(
         id='data-table'
@@ -80,9 +81,9 @@ def update_after_upload(list_of_contents, list_of_names):
             filename: read_data(contents, filename)
             for contents, filename in zip(list_of_contents, list_of_names)
         })
-        # output as dropdown
-        children = dcc.Dropdown(list(DATA.keys()), id='data-dropdown')
-        return children
+    # output as dropdown
+    children = dcc.Dropdown(list(DATA.keys()), id='data-dropdown')
+    return children
 
 
 @callback(Output('data-table', 'children'),
@@ -94,7 +95,21 @@ def update_after_dropdown(value):
     :return: table
     '''
     if value is not None:
-        return dash_table.DataTable(data=DATA[value].to_dict('records'), page_size=10)
+        # parse data
+        parsed = parse_data(value)
+        # render parsed data
+        return dash_table.DataTable(data=parsed, page_size=10)
+
+
+def parse_data(value):
+    '''
+    function to actually parse data into desired format
+    :param value: name of file
+    :return:
+    '''
+    df = DATA[value]
+    parsed = df.to_dict('records')
+    return parsed
 
 
 if __name__ == '__main__':
