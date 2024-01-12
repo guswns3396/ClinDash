@@ -2,6 +2,9 @@ import base64
 import io
 
 from dash import Dash, dcc, html, Input, Output, State, callback, dash_table
+from dash.exceptions import PreventUpdate
+
+import plotly.express as px
 
 import pandas as pd
 
@@ -38,7 +41,8 @@ app.layout = html.Div([
     ),
     html.Div(
         id='data-table'
-    )
+    ),
+    dcc.Graph(id='data-pie')
 ])
 
 
@@ -86,8 +90,10 @@ def update_after_upload(list_of_contents, list_of_names):
     return children
 
 
-@callback(Output('data-table', 'children'),
-          Input('data-dropdown', 'value'))
+@callback(
+    [Output('data-table', 'children'), Output('data-pie', 'figure')],
+    Input('data-dropdown', 'value')
+)
 def update_after_dropdown(value):
     '''
     output table when dropdown selected
@@ -98,7 +104,8 @@ def update_after_dropdown(value):
         # parse data
         parsed = parse_data(value)
         # render parsed data
-        return dash_table.DataTable(data=parsed, page_size=10)
+        return dash_table.DataTable(data=parsed['table'], page_size=10), parsed['pie']
+    raise PreventUpdate
 
 
 def parse_data(value):
@@ -107,8 +114,10 @@ def parse_data(value):
     :param value: name of file
     :return:
     '''
+    parsed = {}
     df = DATA[value]
-    parsed = df.to_dict('records')
+    parsed['table'] = df.to_dict('records')
+    parsed['pie'] = px.pie(df, values=' duration', names=' description', hole=.3)
     return parsed
 
 
